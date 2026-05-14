@@ -1,0 +1,67 @@
+@import url('https://fonts.googleapis.com/css2?family=Bowlby+One+SC&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --brand-blue: #173F87;
+  --brand-orange: #E8551C;
+  --brand-cream: #FAF8F3;
+  --brand-line: #E8E5DC;
+}
+
+html, body {
+  background: var(--brand-cream);
+  color: #0F1419;
+  font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+.heading-display {
+  font-family: 'Bowlby One SC', system-ui, sans-serif;
+  letter-spacing: 0.5px;
+}
+
+/* PRINT styles for invoices */
+@media print {
+  body * { visibility: hidden !important; }
+  .print-area, .print-area * { visibility: visible !important; }
+  .print-area {
+    position: absolute !important;
+    left: 0; top: 0; width: 100%;
+    background: white !important;
+  }
+  .no-print { display: none !important; }
+  @page { size: A4; margin: 0; }
+}
+
+/* Reusable utility classes */
+.btn-primary {
+  @apply inline-flex items-center gap-2 px-4 py-2.5 rounded-[10px] bg-brand-orange text-white font-bold text-sm
+         transition-all duration-150 hover:bg-[#C9410B] hover:-translate-y-0.5 disabled:opacity-50 disabled:hover:translate-y-0;
+}
+.btn-secondary {
+  @apply inline-flex items-center gap-2 px-4 py-2 rounded-[10px] bg-white border border-brand-blue text-brand-blue font-semibold text-sm
+         transition-all duration-150 hover:bg-brand-blue hover:text-white disabled:opacity-50;
+  border-width: 1.5px;
+}
+.btn-ghost {
+  @apply inline-flex items-center gap-1.5 px-3 py-2 rounded-lg text-brand-ink-soft text-sm
+         transition-colors hover:bg-black/5 hover:text-brand-ink;
+}
+.btn-danger {
+  @apply inline-flex items-center justify-center w-8 h-8 rounded-lg text-red-700 transition-colors hover:bg-red-100;
+}
+.input {
+  @apply w-full px-3.5 py-2.5 border bg-white rounded-[10px] text-sm font-sans
+         transition-colors focus:outline-none focus:border-brand-blue disabled:bg-gray-50;
+  border-width: 1.5px;
+  border-color: var(--brand-line);
+}
+.label {
+  @apply block text-xs font-semibold text-brand-ink-soft mb-1.5 uppercase tracking-wide;
+}
+.pill {
+  @apply inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold;
+}
