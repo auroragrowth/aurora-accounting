@@ -6,7 +6,7 @@ import { Plus, Search, Edit3, Trash2, Eye } from "lucide-react";
 import { PageHeader, EmptyState, Th, Td, StatusPill } from "./ui";
 import { InvoiceForm } from "./invoice-form";
 import { useToast } from "./toast-provider";
-import type { Customer, Invoice, Settings } from "@/lib/types";
+import type { Customer, Invoice, LineItemPreset, Settings } from "@/lib/types";
 import { fmtGBP, fmtDate, invoiceTotal } from "@/lib/utils";
 import { deleteInvoice } from "@/app/(app)/invoices/actions";
 
@@ -14,10 +14,12 @@ export function InvoicesView({
   invoices,
   customers,
   settings,
+  presets,
 }: {
   invoices: Invoice[];
   customers: Customer[];
   settings: Settings;
+  presets: LineItemPreset[];
 }) {
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState<Invoice | null>(null);
@@ -127,6 +129,7 @@ export function InvoicesView({
           initial={editing}
           customers={customers}
           settings={settings}
+          presets={presets}
           onClose={() => { setShowForm(false); setEditing(null); }}
         />
       )}

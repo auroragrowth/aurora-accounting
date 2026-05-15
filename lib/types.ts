@@ -9,6 +9,8 @@ export type ExpenseCategory =
 
 export type InvoiceStatus = "draft" | "sent" | "paid" | "overdue";
 
+export type QuoteStatus = "draft" | "sent" | "accepted" | "declined" | "expired";
+
 export interface Customer {
   id: string;
   user_id: string;
@@ -56,6 +58,17 @@ export interface InvoiceItem {
   price: number;
 }
 
+export interface LineItemPreset {
+  id: string;
+  user_id: string;
+  description: string;
+  default_price: number;
+  default_qty: number;
+  sort_order: number;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface CustomerSnapshot {
   name: string;
   email: string;
@@ -83,6 +96,25 @@ export interface Invoice {
   updated_at: string;
 }
 
+export interface Quote {
+  id: string;
+  user_id: string;
+  quote_number: string;
+  date: string;
+  valid_until: string;
+  customer_id: string | null;
+  customer_snapshot: CustomerSnapshot;
+  items: InvoiceItem[];
+  notes: string | null;
+  terms: string | null;
+  vat_enabled: boolean;
+  vat_rate: number;
+  status: QuoteStatus;
+  converted_invoice_id: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface Settings {
   user_id: string;
   company_name: string;
@@ -101,6 +133,9 @@ export interface Settings {
   payment_terms: string;
   next_invoice_number: number;
   invoice_prefix: string;
+  next_quote_number: number;
+  quote_prefix: string;
+  quote_terms: string;
   vat_rate: number;
   vat_enabled: boolean;
   created_at: string;

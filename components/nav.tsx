@@ -2,13 +2,15 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Receipt, FileText, Building2, Settings as SettingsIcon } from "lucide-react";
+import { LayoutDashboard, Receipt, FileText, FileSignature, Building2, BookOpen, Settings as SettingsIcon } from "lucide-react";
 
 const TABS = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/expenses", label: "Expenses", icon: Receipt },
+  { href: "/quotes", label: "Quotes", icon: FileSignature },
   { href: "/invoices", label: "Invoices", icon: FileText },
   { href: "/contacts", label: "Contacts", icon: Building2 },
+  { href: "/catalogue", label: "Catalogue", icon: BookOpen },
   { href: "/settings", label: "Settings", icon: SettingsIcon },
 ];
 

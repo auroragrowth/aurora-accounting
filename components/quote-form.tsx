@@ -5,9 +5,9 @@ import { useRouter } from "next/navigation";
 import { Plus, Trash2 } from "lucide-react";
 import { Field, Modal } from "./ui";
 import { useToast } from "./toast-provider";
-import type { Customer, Invoice, InvoiceItem, InvoiceStatus, LineItemPreset, Settings } from "@/lib/types";
-import { fmtGBP, todayISO } from "@/lib/utils";
-import { saveInvoice } from "@/app/(app)/invoices/actions";
+import type { Customer, InvoiceItem, LineItemPreset, Quote, QuoteStatus, Settings } from "@/lib/types";
+import { fmtGBP, todayISO, addDaysISO } from "@/lib/utils";
+import { saveQuote } from "@/app/(app)/quotes/actions";
 
 const emptyCustomer = {
   name: "",
@@ -18,14 +18,14 @@ const emptyCustomer = {
   country: "United Kingdom",
 };
 
-export function InvoiceForm({
+export function QuoteForm({
   initial,
   customers,
   settings,
   presets,
   onClose,
 }: {
-  initial: Invoice | null;
+  initial: Quote | null;
   customers: Customer[];
   settings: Settings;
   presets: LineItemPreset[];
@@ -38,17 +38,17 @@ export function InvoiceForm({
   const [form, setForm] = useState({
     id: initial?.id,
     date: initial?.date ?? todayISO(),
-    due_date: initial?.due_date ?? todayISO(),
+    valid_until: initial?.valid_until ?? addDaysISO(30),
     customer_id: initial?.customer_id ?? null,
     customer: initial?.customer_snapshot ?? { ...emptyCustomer },
     items: initial?.items?.length
       ? initial.items.map((it) => ({ description: it.description, qty: String(it.qty), price: String(it.price) }))
       : [{ description: "", qty: "1", price: "" }],
     notes: initial?.notes ?? "",
-    payment_terms: initial?.payment_terms ?? settings.payment_terms,
+    terms: initial?.terms ?? settings.quote_terms,
     vat_enabled: initial?.vat_enabled ?? settings.vat_enabled,
     vat_rate: initial ? Number(initial.vat_rate) : Number(settings.vat_rate),
-    status: (initial?.status ?? "draft") as InvoiceStatus,
+    status: (initial?.status ?? "draft") as QuoteStatus,
   });
 
   const { subtotal, vat, total } = useMemo(() => {
@@ -119,15 +119,15 @@ export function InvoiceForm({
     if (items.length === 0) return showToast("Add at least one line item with a description and price", "error");
 
     setSaving(true);
-    const res = await saveInvoice({
+    const res = await saveQuote({
       id: form.id,
       date: form.date,
-      due_date: form.due_date,
+      valid_until: form.valid_until,
       customer_id: form.customer_id,
       customer_snapshot: form.customer,
       items,
       notes: form.notes,
-      payment_terms: form.payment_terms,
+      terms: form.terms,
       vat_enabled: form.vat_enabled,
       vat_rate: form.vat_rate,
       status: form.status,
@@ -136,21 +136,21 @@ export function InvoiceForm({
 
     if (res.error) showToast(res.error, "error");
     else {
-      showToast(form.id ? "Invoice updated" : `Invoice ${res.invoice_number} created`);
+      showToast(form.id ? "Quote updated" : `Quote ${res.quote_number} created`);
       onClose();
-      if (res.id && !form.id) router.push(`/invoices/${res.id}`);
+      if (res.id && !form.id) router.push(`/quotes/${res.id}`);
     }
   }
 
   return (
-    <Modal onClose={onClose} title={initial ? `Edit ${initial.invoice_number}` : "New invoice"} wide>
+    <Modal onClose={onClose} title={initial ? `Edit ${initial.quote_number}` : "New quote"} wide>
       <form onSubmit={submit}>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-          <Field label="Invoice date">
+          <Field label="Quote date">
             <input type="date" className="input" value={form.date} onChange={(e) => setForm({ ...form, date: e.target.value })} required />
           </Field>
-          <Field label="Due date">
-            <input type="date" className="input" value={form.due_date} onChange={(e) => setForm({ ...form, due_date: e.target.value })} required />
+          <Field label="Valid until">
+            <input type="date" className="input" value={form.valid_until} onChange={(e) => setForm({ ...form, valid_until: e.target.value })} required />
           </Field>
         </div>
 
@@ -176,7 +176,7 @@ export function InvoiceForm({
         <Field label="Customer name">
           <input
             className="input"
-            list="customers-datalist"
+            list="quote-customers-datalist"
             value={form.customer.name}
             onChange={(e) => {
               const name = e.target.value;
@@ -189,7 +189,7 @@ export function InvoiceForm({
             }}
             required
           />
-          <datalist id="customers-datalist">
+          <datalist id="quote-customers-datalist">
             {customers.map((c) => <option key={c.id} value={c.name} />)}
           </datalist>
         </Field>
@@ -316,22 +316,22 @@ export function InvoiceForm({
           </div>
         </div>
 
-        <Field label="Notes (optional)" hint="Visible on the invoice">
+        <Field label="Notes (optional)" hint="Visible on the quote">
           <textarea
             className="input resize-y font-sans"
             rows={2}
             value={form.notes}
             onChange={(e) => setForm({ ...form, notes: e.target.value })}
-            placeholder="Thank you for your business, looking forward to the event!"
+            placeholder="Looking forward to working with you on this event!"
           />
         </Field>
 
-        <Field label="Payment terms (optional)">
+        <Field label="Terms (optional)">
           <textarea
             className="input resize-y font-sans"
             rows={2}
-            value={form.payment_terms}
-            onChange={(e) => setForm({ ...form, payment_terms: e.target.value })}
+            value={form.terms}
+            onChange={(e) => setForm({ ...form, terms: e.target.value })}
           />
         </Field>
 
@@ -340,12 +340,13 @@ export function InvoiceForm({
             <select
               className="input"
               value={form.status}
-              onChange={(e) => setForm({ ...form, status: e.target.value as InvoiceStatus })}
+              onChange={(e) => setForm({ ...form, status: e.target.value as QuoteStatus })}
             >
               <option value="draft">Draft</option>
               <option value="sent">Sent</option>
-              <option value="paid">Paid</option>
-              <option value="overdue">Overdue</option>
+              <option value="accepted">Accepted</option>
+              <option value="declined">Declined</option>
+              <option value="expired">Expired</option>
             </select>
           </Field>
         )}
@@ -353,7 +354,7 @@ export function InvoiceForm({
         <div className="flex justify-end gap-2 mt-5 pt-4 border-t border-brand-line">
           <button type="button" className="btn-ghost" onClick={onClose}>Cancel</button>
           <button type="submit" disabled={saving} className="btn-primary">
-            {saving ? "Saving…" : initial ? "Save changes" : "Create invoice"}
+            {saving ? "Saving…" : initial ? "Save changes" : "Create quote"}
           </button>
         </div>
       </form>

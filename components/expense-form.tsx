@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { Upload, X } from "lucide-react";
+import { Upload, X, Sparkles, BookmarkCheck } from "lucide-react";
 import { Field, Modal } from "./ui";
 import { useToast } from "./toast-provider";
 import type { Expense, ExpenseCategory, Payee } from "@/lib/types";
@@ -154,6 +154,20 @@ export function ExpenseForm({
           <datalist id="payees-datalist">
             {payees.map((p) => <option key={p.id} value={p.name} />)}
           </datalist>
+          {form.vendor.trim() && !initial && (() => {
+            const matched = payees.find((p) => p.name.toLowerCase() === form.vendor.trim().toLowerCase());
+            return matched ? (
+              <div className="mt-1.5 text-xs text-brand-ink-soft flex items-center gap-1.5">
+                <BookmarkCheck size={12} className="text-brand-blue" />
+                Using saved payee
+              </div>
+            ) : (
+              <div className="mt-1.5 text-xs text-brand-orange flex items-center gap-1.5">
+                <Sparkles size={12} />
+                New payee — will be saved to the dropdown for next time
+              </div>
+            );
+          })()}
         </Field>
         <Field label="Description (optional)">
           <input
