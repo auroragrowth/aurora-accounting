@@ -11,6 +11,8 @@ export type InvoiceStatus = "draft" | "sent" | "paid" | "overdue";
 
 export type QuoteStatus = "draft" | "sent" | "accepted" | "declined" | "expired";
 
+export type TakingSource = "cash" | "sumup" | "square" | "card" | "bank_transfer" | "other";
+
 export interface Customer {
   id: string;
   user_id: string;
@@ -115,6 +117,19 @@ export interface Quote {
   updated_at: string;
 }
 
+export interface Taking {
+  id: string;
+  user_id: string;
+  date: string;
+  source: TakingSource;
+  amount: number;
+  event_name: string | null;
+  description: string | null;
+  reference: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface Settings {
   user_id: string;
   company_name: string;
@@ -154,4 +169,17 @@ export const EXPENSE_CATEGORIES: { id: ExpenseCategory; label: string; color: st
 
 export function expenseCategoryLabel(id: ExpenseCategory): string {
   return EXPENSE_CATEGORIES.find((c) => c.id === id)?.label ?? id;
+}
+
+export const TAKINGS_SOURCES: { id: TakingSource; label: string; color: string }[] = [
+  { id: "cash",          label: "Cash",          color: "#0F8A6B" },
+  { id: "sumup",         label: "SumUp",         color: "#173F87" },
+  { id: "square",        label: "Square",        color: "#4A5568" },
+  { id: "card",          label: "Card terminal", color: "#7A4DBF" },
+  { id: "bank_transfer", label: "Bank transfer", color: "#BD8B00" },
+  { id: "other",         label: "Other",         color: "#E8551C" },
+];
+
+export function takingsSourceLabel(id: TakingSource): string {
+  return TAKINGS_SOURCES.find((s) => s.id === id)?.label ?? id;
 }

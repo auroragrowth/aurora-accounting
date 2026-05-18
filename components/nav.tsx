@@ -2,11 +2,12 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Receipt, FileText, FileSignature, Building2, BookOpen, Settings as SettingsIcon } from "lucide-react";
+import { LayoutDashboard, Receipt, Banknote, FileText, FileSignature, Building2, BookOpen, Settings as SettingsIcon } from "lucide-react";
 
 const TABS = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/expenses", label: "Expenses", icon: Receipt },
+  { href: "/takings", label: "Income", icon: Banknote },
   { href: "/quotes", label: "Quotes", icon: FileSignature },
   { href: "/invoices", label: "Invoices", icon: FileText },
   { href: "/contacts", label: "Contacts", icon: Building2 },
