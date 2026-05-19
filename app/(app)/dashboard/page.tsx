@@ -1,9 +1,9 @@
 import Link from "next/link";
-import { TrendingDown, TrendingUp, Wallet, AlertCircle, Plus, Settings as SettingsIcon, ChevronRight } from "lucide-react";
+import { TrendingDown, Banknote, Landmark, AlertCircle, Plus, Settings as SettingsIcon, ChevronRight } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { PageHeader, Card, EmptyState, StatusPill } from "@/components/ui";
 import { EXPENSE_CATEGORIES, expenseCategoryLabel } from "@/lib/types";
-import type { Expense, Invoice } from "@/lib/types";
+import type { Expense, Invoice, Taking } from "@/lib/types";
 import { fmtGBP, fmtDate, invoiceTotal } from "@/lib/utils";
 
 function StatCard({
@@ -34,13 +34,15 @@ function StatCard({
 
 export default async function DashboardPage() {
   const supabase = await createClient();
-  const [{ data: expenses }, { data: invoices }] = await Promise.all([
+  const [{ data: expenses }, { data: invoices }, { data: takings }] = await Promise.all([
     supabase.from("expenses").select("*").order("date", { ascending: false }),
     supabase.from("invoices").select("*").order("date", { ascending: false }),
+    supabase.from("takings").select("*").order("date", { ascending: false }),
   ]);
 
   const exps = (expenses ?? []) as Expense[];
   const invs = (invoices ?? []) as Invoice[];
+  const tks = (takings ?? []) as Taking[];
 
   const now = new Date();
   const thisMonth = now.getMonth();
@@ -59,6 +61,12 @@ export default async function DashboardPage() {
     .filter((i) => i.status !== "paid" && i.status !== "draft")
     .reduce((s, i) => s + invoiceTotal(i), 0);
 
+  const takingsTotal = tks.reduce((s, t) => s + Number(t.amount), 0);
+  const income = takingsTotal + paid;
+  const outgoings = totalAllExp;
+  const leftInBank = income - outgoings;
+  const paidCount = invs.filter((i) => i.status === "paid").length;
+
   const byCategory: Record<string, number> = {};
   monthExpenses.forEach((e) => {
     byCategory[e.category] = (byCategory[e.category] || 0) + Number(e.amount);
@@ -76,10 +84,34 @@ export default async function DashboardPage() {
       />
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-        <StatCard icon={<TrendingDown size={20} />} label="Expenses this month" value={fmtGBP(totalMonthExp)} sub={`${monthExpenses.length} transactions`} accent="#E8551C" />
-        <StatCard icon={<TrendingUp size={20} />} label="Total invoiced" value={fmtGBP(invoiced)} sub={`${invs.length} invoices`} accent="#173F87" />
-        <StatCard icon={<Wallet size={20} />} label="Paid" value={fmtGBP(paid)} sub={`${invs.filter(i => i.status === "paid").length} invoices`} accent="#0F8A6B" />
-        <StatCard icon={<AlertCircle size={20} />} label="Outstanding" value={fmtGBP(outstanding)} sub={`${invs.filter(i => i.status !== "paid" && i.status !== "draft").length} unpaid`} accent="#BD8B00" />
+        <StatCard
+          icon={<Banknote size={20} />}
+          label="Income"
+          value={fmtGBP(income)}
+          sub={`${tks.length} takings + ${paidCount} paid invoices`}
+          accent="#0F8A6B"
+        />
+        <StatCard
+          icon={<TrendingDown size={20} />}
+          label="Outgoings"
+          value={fmtGBP(outgoings)}
+          sub={`${exps.length} expenses · ${fmtGBP(totalMonthExp)} this month`}
+          accent="#E8551C"
+        />
+        <StatCard
+          icon={<Landmark size={20} />}
+          label="Left in the bank"
+          value={fmtGBP(leftInBank)}
+          sub="Recorded income minus outgoings"
+          accent={leftInBank < 0 ? "#C9410B" : "#173F87"}
+        />
+        <StatCard
+          icon={<AlertCircle size={20} />}
+          label="Outstanding"
+          value={fmtGBP(outstanding)}
+          sub={`${invs.filter((i) => i.status !== "paid" && i.status !== "draft").length} unpaid · ${fmtGBP(invoiced)} invoiced`}
+          accent="#BD8B00"
+        />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-5">
