@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Receipt, Banknote, FileText, FileSignature, Building2, BookOpen, Landmark, Settings as SettingsIcon } from "lucide-react";
+import { LayoutDashboard, Receipt, Banknote, FileText, FileSignature, Building2, BookOpen, Landmark, Scale, Settings as SettingsIcon } from "lucide-react";
 
 const TABS = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -12,6 +12,7 @@ const TABS = [
   { href: "/invoices", label: "Invoices", icon: FileText },
   { href: "/contacts", label: "Contacts", icon: Building2 },
   { href: "/catalogue", label: "Catalogue", icon: BookOpen },
+  { href: "/directors-loan", label: "Director's loan", icon: Scale },
   { href: "/bank", label: "Bank", icon: Landmark },
   { href: "/settings", label: "Settings", icon: SettingsIcon },
 ];
