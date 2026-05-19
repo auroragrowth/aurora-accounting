@@ -171,16 +171,35 @@ export function shouldSkipMonzoRow(r: MonzoRow): string | null {
 
   if (name === "atm") return "ATM withdrawal";
 
-  // Personal self-transfers — works for both Monzo formats
+  // Personal self-transfers — works for both Monzo formats.
+  // Director's-loan transfers are NOT skipped here; the reconciler
+  // routes them via classifyDirectorLoan() instead so they can be
+  // imported with one click into the Director's loan area.
   if (name === "paul rudland") {
-    if (type === "monzo-to-monzo") return "Personal transfer";
-    if (cat === "transfers") {
+    if (type === "monzo-to-monzo") {
+      if (!/\bloan\b|pay\s*back|^dl\b/i.test(r.notes)) return "Personal transfer";
+    } else if (cat === "transfers") {
       if (notes === "" || notes === "paul rudland") return "Personal transfer";
-      if (/\bloan\b|pay\s*back|^dl\b/i.test(r.notes)) return "Director's loan";
     }
   }
 
   return null;
+}
+
+/**
+ * Classify a row as a director's-loan transfer.
+ * Returns the direction (in = director funds the company, out = company
+ * repays the director) or null if the row isn't a DL transfer.
+ */
+export function classifyDirectorLoan(r: MonzoRow): "in" | "out" | null {
+  const name = r.name.toLowerCase();
+  const cat = r.category.toLowerCase();
+  const type = r.type.toLowerCase();
+  if (name !== "paul rudland") return null;
+  const isTransfer = cat === "transfers" || type === "monzo-to-monzo" || type === "faster payment";
+  if (!isTransfer) return null;
+  if (!/\bloan\b|pay\s*back|^dl\b/i.test(r.notes)) return null;
+  return r.money_in > 0 ? "in" : "out";
 }
 
 /** Guess a takings source from a Monzo row's Name / Type. */

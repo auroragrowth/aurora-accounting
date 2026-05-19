@@ -13,6 +13,8 @@ export type QuoteStatus = "draft" | "sent" | "accepted" | "declined" | "expired"
 
 export type TakingSource = "cash" | "sumup" | "square" | "card" | "bank_transfer" | "other";
 
+export type LoanDirection = "in" | "out";
+
 export interface Customer {
   id: string;
   user_id: string;
@@ -124,6 +126,18 @@ export interface Taking {
   source: TakingSource;
   amount: number;
   event_name: string | null;
+  description: string | null;
+  reference: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface DirectorLoan {
+  id: string;
+  user_id: string;
+  date: string;
+  direction: LoanDirection;
+  amount: number;
   description: string | null;
   reference: string | null;
   created_at: string;

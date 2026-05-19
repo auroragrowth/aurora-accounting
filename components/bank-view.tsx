@@ -1,11 +1,11 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { Upload, CheckCircle2, AlertTriangle, ChevronDown, ChevronRight, FileText, Plus } from "lucide-react";
+import { Upload, CheckCircle2, AlertTriangle, ChevronDown, ChevronRight, FileText, Plus, Landmark } from "lucide-react";
 import { PageHeader, EmptyState, Th, Td, Card } from "./ui";
 import { useToast } from "./toast-provider";
 import { fmtGBP, fmtDate } from "@/lib/utils";
-import { reconcileMonzoCsv, importBankRowAsTaking, importBankRowAsExpense } from "@/app/(app)/bank/actions";
+import { reconcileMonzoCsv, importBankRowAsTaking, importBankRowAsExpense, importBankRowAsDirectorLoan } from "@/app/(app)/bank/actions";
 import type { ReconcileResult, ReconcileLine } from "@/lib/bank-types";
 
 export function BankView() {
@@ -69,9 +69,23 @@ export function BankView() {
     }
   }
 
+  async function importLoan(line: ReconcileLine) {
+    const key = lineKey(line);
+    setImported((s) => new Set(s).add(key));
+    const res = await importBankRowAsDirectorLoan(line.row);
+    if (res.error) {
+      setImported((s) => { const n = new Set(s); n.delete(key); return n; });
+      showToast(res.error, "error");
+    } else {
+      showToast("Added to director's loan");
+    }
+  }
+
   const matched = result?.lines.filter((l) => l.status === "matched") ?? [];
   const unmatchedIn = result?.lines.filter((l) => l.status === "unmatched_in") ?? [];
   const unmatchedOut = result?.lines.filter((l) => l.status === "unmatched_out") ?? [];
+  const unmatchedLoanIn = result?.lines.filter((l) => l.status === "unmatched_loan_in") ?? [];
+  const unmatchedLoanOut = result?.lines.filter((l) => l.status === "unmatched_loan_out") ?? [];
   const skipped = result?.lines.filter((l) => l.status === "skipped") ?? [];
 
   return (
@@ -115,7 +129,7 @@ export function BankView() {
             </Card>
           )}
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 mb-6">
             <SummaryTile
               icon={<CheckCircle2 size={20} />}
               label="Matched"
@@ -138,6 +152,13 @@ export function BankView() {
               accent="#E8551C"
             />
             <SummaryTile
+              icon={<Landmark size={20} />}
+              label="Director's loan to record"
+              value={`${result.totals.unmatched_loan_in.count + result.totals.unmatched_loan_out.count}`}
+              sub={`${fmtGBP(result.totals.unmatched_loan_in.amount)} in · ${fmtGBP(result.totals.unmatched_loan_out.amount)} out`}
+              accent="#7A4DBF"
+            />
+            <SummaryTile
               icon={<FileText size={20} />}
               label="Range"
               value={result.date_from && result.date_to ? `${result.lines.length} lines` : "—"}
@@ -154,6 +175,7 @@ export function BankView() {
                 onImport={importTaking}
                 imported={imported}
                 lineKey={lineKey}
+                importLabel="Add to takings"
               />
             </Card>
           )}
@@ -166,11 +188,38 @@ export function BankView() {
                 onImport={importExpense}
                 imported={imported}
                 lineKey={lineKey}
+                importLabel="Add to expenses"
               />
             </Card>
           )}
 
-          {unmatchedIn.length === 0 && unmatchedOut.length === 0 && (
+          {unmatchedLoanIn.length > 0 && (
+            <Card title="Director's loan paid in — not on system" className="mb-5">
+              <DiscrepancyTable
+                lines={unmatchedLoanIn}
+                direction="in"
+                onImport={importLoan}
+                imported={imported}
+                lineKey={lineKey}
+                importLabel="Add to director's loan"
+              />
+            </Card>
+          )}
+
+          {unmatchedLoanOut.length > 0 && (
+            <Card title="Director's loan paid out — not on system" className="mb-5">
+              <DiscrepancyTable
+                lines={unmatchedLoanOut}
+                direction="out"
+                onImport={importLoan}
+                imported={imported}
+                lineKey={lineKey}
+                importLabel="Add to director's loan"
+              />
+            </Card>
+          )}
+
+          {unmatchedIn.length === 0 && unmatchedOut.length === 0 && unmatchedLoanIn.length === 0 && unmatchedLoanOut.length === 0 && (
             <Card className="mb-5">
               <div className="py-8 text-center text-sm">
                 <CheckCircle2 className="inline-block text-brand-green mr-2" size={20} />
@@ -212,7 +261,16 @@ export function BankView() {
                             )}
                           </Td>
                           <Td className="text-brand-ink-soft text-xs">
-                            {l.matched_against?.kind} · {fmtDate(l.matched_against?.date ?? "")}
+                            {(() => {
+                              const k = l.matched_against?.kind;
+                              const lbl = l.matched_against?.label;
+                              const kindLabel =
+                                k === "invoice" ? `Invoice ${lbl ?? ""}`.trim() :
+                                k === "director_loan" ? `Director's loan ${lbl ?? ""}`.trim() :
+                                k === "taking" ? "Takings" :
+                                k === "expense" ? "Expense" : (k ?? "");
+                              return `${kindLabel} · ${fmtDate(l.matched_against?.date ?? "")}`;
+                            })()}
                           </Td>
                         </tr>
                       ))}
@@ -271,12 +329,14 @@ function DiscrepancyTable({
   onImport,
   imported,
   lineKey,
+  importLabel,
 }: {
   lines: ReconcileLine[];
   direction: "in" | "out";
   onImport: (l: ReconcileLine) => void;
   imported: Set<string>;
   lineKey: (l: ReconcileLine) => string;
+  importLabel: string;
 }) {
   return (
     <table className="w-full">
@@ -316,7 +376,7 @@ function DiscrepancyTable({
                     </span>
                   ) : (
                     <button className="btn-secondary text-xs" onClick={() => onImport(l)}>
-                      <Plus size={12} /> {direction === "in" ? "Add to takings" : "Add to expenses"}
+                      <Plus size={12} /> {importLabel}
                     </button>
                   )}
                 </div>
