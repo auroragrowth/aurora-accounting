@@ -69,8 +69,16 @@ export default async function DashboardPage() {
   const dlOut = dls.filter((l) => l.direction === "out").reduce((s, l) => s + Number(l.amount), 0);
   const income = takingsTotal + paid;
   const outgoings = totalAllExp;
-  // Bank balance: cash flows include director's loan movements
-  const leftInBank = income + dlIn - outgoings - dlOut;
+
+  // Bank balance: only money that actually flowed through the bank account.
+  // Excludes cash takings (kept as till float) and cash-paid expenses
+  // (came out of the till, not the bank).
+  const cashTakings = tks.filter((t) => t.source === "cash").reduce((s, t) => s + Number(t.amount), 0);
+  const cashExpenses = exps.filter((e) => e.payment_method === "cash").reduce((s, e) => s + Number(e.amount), 0);
+  const bankIncome = income - cashTakings;
+  const bankOutgoings = outgoings - cashExpenses;
+  const leftInBank = bankIncome + dlIn - bankOutgoings - dlOut;
+  const cashInTill = cashTakings - cashExpenses;
   const paidCount = invs.filter((i) => i.status === "paid").length;
 
   const byCategory: Record<string, number> = {};
@@ -109,7 +117,7 @@ export default async function DashboardPage() {
           icon={<Landmark size={20} />}
           label="Left in the bank"
           value={fmtGBP(leftInBank)}
-          sub="Income + DL in − outgoings − DL out"
+          sub={cashInTill > 0 ? `+${fmtGBP(cashInTill)} cash in till` : "Bank-only flow"}
           accent={leftInBank < 0 ? "#C9410B" : "#173F87"}
         />
         <StatCard
