@@ -71,6 +71,31 @@ export interface Mileage {
   updated_at: string;
 }
 
+export type PotKind = "mileage" | "vat" | "tax";
+
+export interface PotAllocation {
+  id: string;
+  user_id: string;
+  pot: PotKind;
+  date: string;
+  amount: number;
+  note: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface MileageRoute {
+  id: string;
+  user_id: string;
+  name: string | null;
+  from_place: string;
+  to_place: string;
+  miles: number;
+  sort_order: number;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface InvoiceItem {
   description: string;
   qty: number;

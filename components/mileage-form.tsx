@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Field, Modal } from "./ui";
 import { useToast } from "./toast-provider";
-import type { Mileage } from "@/lib/types";
+import type { Mileage, MileageRoute } from "@/lib/types";
 import { todayISO, fmtGBP } from "@/lib/utils";
 import { saveMileage } from "@/app/(app)/mileage/actions";
 
@@ -11,11 +11,13 @@ export function MileageForm({
   initial,
   defaultRate,
   knownEvents,
+  routes,
   onClose,
 }: {
   initial: Mileage | null;
   defaultRate: number;
   knownEvents: string[];
+  routes: MileageRoute[];
   onClose: () => void;
 }) {
   const [form, setForm] = useState({
@@ -58,12 +60,42 @@ export function MileageForm({
     }
   }
 
+  function applyRoute(id: string) {
+    const r = routes.find((x) => x.id === id);
+    if (!r) return;
+    setForm((f) => ({
+      ...f,
+      from_place: r.from_place,
+      to_place: r.to_place,
+      miles: String(r.miles),
+    }));
+  }
+
   return (
     <Modal onClose={onClose} title={initial ? "Edit trip" : "Log a trip"}>
       <form onSubmit={submit}>
         <Field label="Date">
           <input type="date" className="input" value={form.date} onChange={(e) => setForm({ ...form, date: e.target.value })} required />
         </Field>
+        {routes.length > 0 && (
+          <Field label="Pick a saved route" hint="Or just type below to start fresh">
+            <select
+              className="input"
+              value=""
+              onChange={(e) => {
+                if (e.target.value) applyRoute(e.target.value);
+                e.target.value = "";
+              }}
+            >
+              <option value="">— Select a saved route —</option>
+              {routes.map((r) => (
+                <option key={r.id} value={r.id}>
+                  {(r.name?.trim() || `${r.from_place} → ${r.to_place}`)} · {Number(r.miles).toFixed(1)} mi
+                </option>
+              ))}
+            </select>
+          </Field>
+        )}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
           <Field label="From">
             <input className="input" value={form.from_place} onChange={(e) => setForm({ ...form, from_place: e.target.value })} placeholder="e.g. Stowmarket" required />
