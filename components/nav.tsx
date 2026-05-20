@@ -5,19 +5,23 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   LayoutDashboard, Receipt, Banknote, FileText, FileSignature, Building2,
-  BookOpen, Landmark, Scale, Settings as SettingsIcon, Menu, X,
+  BookOpen, Landmark, Scale, Car, BarChart3, PiggyBank,
+  Settings as SettingsIcon, Menu, X,
 } from "lucide-react";
 
 const TABS = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/expenses", label: "Expenses", icon: Receipt },
   { href: "/takings", label: "Income", icon: Banknote },
+  { href: "/mileage", label: "Mileage", icon: Car },
   { href: "/quotes", label: "Quotes", icon: FileSignature },
   { href: "/invoices", label: "Invoices", icon: FileText },
   { href: "/contacts", label: "Contacts", icon: Building2 },
   { href: "/catalogue", label: "Catalogue", icon: BookOpen },
   { href: "/directors-loan", label: "Director's loan", icon: Scale },
   { href: "/bank", label: "Bank", icon: Landmark },
+  { href: "/reports", label: "Reports", icon: BarChart3 },
+  { href: "/pots", label: "Pots", icon: PiggyBank },
   { href: "/settings", label: "Settings", icon: SettingsIcon },
 ];
 
