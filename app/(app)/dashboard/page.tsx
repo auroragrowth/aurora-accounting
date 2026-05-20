@@ -1,10 +1,10 @@
 import Link from "next/link";
-import { TrendingDown, Banknote, Landmark, AlertCircle, Plus, Settings as SettingsIcon, ChevronRight } from "lucide-react";
+import { TrendingDown, Banknote, Landmark, AlertCircle, Plus, Settings as SettingsIcon, ChevronRight, Car, Calculator, Wallet } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { PageHeader, Card, EmptyState, StatusPill } from "@/components/ui";
 import { ExportAllButton } from "@/components/export-all-button";
 import { EXPENSE_CATEGORIES, expenseCategoryLabel } from "@/lib/types";
-import type { DirectorLoan, Expense, Invoice, Taking } from "@/lib/types";
+import type { DirectorLoan, Expense, Invoice, PotAllocation, Taking } from "@/lib/types";
 import { fmtGBP, fmtDate, invoiceTotal } from "@/lib/utils";
 
 function StatCard({
@@ -35,17 +35,19 @@ function StatCard({
 
 export default async function DashboardPage() {
   const supabase = await createClient();
-  const [{ data: expenses }, { data: invoices }, { data: takings }, { data: loans }] = await Promise.all([
+  const [{ data: expenses }, { data: invoices }, { data: takings }, { data: loans }, { data: allocations }] = await Promise.all([
     supabase.from("expenses").select("*").order("date", { ascending: false }),
     supabase.from("invoices").select("*").order("date", { ascending: false }),
     supabase.from("takings").select("*").order("date", { ascending: false }),
     supabase.from("director_loans").select("*").order("date", { ascending: false }),
+    supabase.from("pot_allocations").select("*"),
   ]);
 
   const exps = (expenses ?? []) as Expense[];
   const invs = (invoices ?? []) as Invoice[];
   const tks = (takings ?? []) as Taking[];
   const dls = (loans ?? []) as DirectorLoan[];
+  const allocs = (allocations ?? []) as PotAllocation[];
 
   const now = new Date();
   const thisMonth = now.getMonth();
@@ -81,6 +83,15 @@ export default async function DashboardPage() {
   const cashInTill = cashTakings - cashExpenses;
   const paidCount = invs.filter((i) => i.status === "paid").length;
 
+  // Monzo pots — money sitting in sub-accounts, not the main current account.
+  const mileagePot = allocs.filter((a) => a.pot === "mileage").reduce((s, a) => s + Number(a.amount), 0);
+  const taxPot     = allocs.filter((a) => a.pot === "tax").reduce((s, a) => s + Number(a.amount), 0);
+  const vatPotBal  = allocs.filter((a) => a.pot === "vat").reduce((s, a) => s + Number(a.amount), 0);
+  const totalInPots = mileagePot + taxPot + vatPotBal;
+  // Total bank balance equals leftInBank; main account = total - what's in pots.
+  const totalBank   = leftInBank;
+  const mainAccount = totalBank - totalInPots;
+
   const byCategory: Record<string, number> = {};
   monthExpenses.forEach((e) => {
     byCategory[e.category] = (byCategory[e.category] || 0) + Number(e.amount);
@@ -98,7 +109,38 @@ export default async function DashboardPage() {
         action={<ExportAllButton expenses={exps} takings={tks} invoices={invs} loans={dls} />}
       />
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+        <StatCard
+          icon={<Landmark size={20} />}
+          label="Main account"
+          value={fmtGBP(mainAccount)}
+          sub={totalInPots > 0 ? `of ${fmtGBP(totalBank)} total Monzo` : "Bank-only flow"}
+          accent={mainAccount < 0 ? "#C9410B" : "#173F87"}
+        />
+        <StatCard
+          icon={<Car size={20} />}
+          label="Mileage pot"
+          value={fmtGBP(mileagePot)}
+          sub="Allocated to Monzo pot"
+          accent="#7A4DBF"
+        />
+        <StatCard
+          icon={<Calculator size={20} />}
+          label="Tax pot"
+          value={fmtGBP(taxPot)}
+          sub="Allocated to Monzo pot"
+          accent="#E8551C"
+        />
+        <StatCard
+          icon={<AlertCircle size={20} />}
+          label="Outstanding"
+          value={fmtGBP(outstanding)}
+          sub={`${invs.filter((i) => i.status !== "paid" && i.status !== "draft").length} unpaid · ${fmtGBP(invoiced)} invoiced`}
+          accent="#BD8B00"
+        />
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
         <StatCard
           icon={<Banknote size={20} />}
           label="Income"
@@ -114,18 +156,11 @@ export default async function DashboardPage() {
           accent="#E8551C"
         />
         <StatCard
-          icon={<Landmark size={20} />}
-          label="Left in the bank"
-          value={fmtGBP(leftInBank)}
-          sub={cashInTill > 0 ? `+${fmtGBP(cashInTill)} cash in till` : "Bank-only flow"}
-          accent={leftInBank < 0 ? "#C9410B" : "#173F87"}
-        />
-        <StatCard
-          icon={<AlertCircle size={20} />}
-          label="Outstanding"
-          value={fmtGBP(outstanding)}
-          sub={`${invs.filter((i) => i.status !== "paid" && i.status !== "draft").length} unpaid · ${fmtGBP(invoiced)} invoiced`}
-          accent="#BD8B00"
+          icon={<Wallet size={20} />}
+          label={cashInTill > 0 ? "Cash in till" : "Net profit"}
+          value={fmtGBP(cashInTill > 0 ? cashInTill : (income - outgoings))}
+          sub={cashInTill > 0 ? "Physical float (not in bank)" : "Income − outgoings"}
+          accent="#0F8A6B"
         />
       </div>
 
