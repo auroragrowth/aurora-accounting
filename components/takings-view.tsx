@@ -1,9 +1,10 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Plus, Search, Edit3, Trash2, Download } from "lucide-react";
+import { Plus, Search, Edit3, Trash2, Download, CreditCard } from "lucide-react";
 import { PageHeader, EmptyState, Th, Td } from "./ui";
 import { TakingForm } from "./taking-form";
+import { SumupPayoutForm } from "./sumup-payout-form";
 import { useToast } from "./toast-provider";
 import { fmtGBP, fmtDate, todayISO } from "@/lib/utils";
 import type { Taking } from "@/lib/types";
@@ -12,6 +13,7 @@ import { deleteTaking } from "@/app/(app)/takings/actions";
 
 export function TakingsView({ takings }: { takings: Taking[] }) {
   const [showForm, setShowForm] = useState(false);
+  const [showSumupForm, setShowSumupForm] = useState(false);
   const [editing, setEditing] = useState<Taking | null>(null);
   const [filterSource, setFilterSource] = useState<string>("all");
   const [search, setSearch] = useState("");
@@ -72,9 +74,12 @@ export function TakingsView({ takings }: { takings: Taking[] }) {
         title="Income / Takings"
         subtitle={`${filtered.length} entries · ${fmtGBP(total)} shown · ${fmtGBP(monthTotal)} this month`}
         action={
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-wrap">
             <button className="btn-secondary" onClick={exportCSV}>
               <Download size={16} /> Export CSV
+            </button>
+            <button className="btn-secondary" onClick={() => setShowSumupForm(true)}>
+              <CreditCard size={16} /> Record SumUp payout
             </button>
             <button className="btn-primary" onClick={() => { setEditing(null); setShowForm(true); }}>
               <Plus size={16} /> Record takings
@@ -160,6 +165,10 @@ export function TakingsView({ takings }: { takings: Taking[] }) {
           initial={editing}
           onClose={() => { setShowForm(false); setEditing(null); }}
         />
+      )}
+
+      {showSumupForm && (
+        <SumupPayoutForm onClose={() => setShowSumupForm(false)} />
       )}
     </div>
   );
