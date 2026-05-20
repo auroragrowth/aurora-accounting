@@ -13,6 +13,7 @@ export interface SaveExpenseInput {
   amount: number;
   payment_method?: string;
   reference?: string;
+  event_name?: string;
   receipt_path?: string | null;
   receipt_type?: string | null;
   receipt_name?: string | null;
@@ -46,6 +47,7 @@ export async function saveExpense(input: SaveExpenseInput) {
       amount: input.amount,
       payment_method: input.payment_method || null,
       reference: input.reference || null,
+      event_name: input.event_name?.trim() || null,
     };
     if (input.receipt_path !== undefined) {
       updateData.receipt_path = input.receipt_path;
@@ -70,6 +72,7 @@ export async function saveExpense(input: SaveExpenseInput) {
       amount: input.amount,
       payment_method: input.payment_method || null,
       reference: input.reference || null,
+      event_name: input.event_name?.trim() || null,
       receipt_path: input.receipt_path || null,
       receipt_type: input.receipt_type || null,
       receipt_name: input.receipt_name || null,

@@ -49,9 +49,24 @@ export interface Expense {
   amount: number;
   payment_method: string | null;
   reference: string | null;
+  event_name: string | null;
   receipt_path: string | null;
   receipt_type: string | null;
   receipt_name: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Mileage {
+  id: string;
+  user_id: string;
+  date: string;
+  from_place: string;
+  to_place: string;
+  miles: number;
+  purpose: string | null;
+  event_name: string | null;
+  rate_used: number;
   created_at: string;
   updated_at: string;
 }
@@ -167,6 +182,8 @@ export interface Settings {
   quote_terms: string;
   vat_rate: number;
   vat_enabled: boolean;
+  mileage_rate_per_mile: number;
+  corporation_tax_rate: number;
   created_at: string;
   updated_at: string;
 }

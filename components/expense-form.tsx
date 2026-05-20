@@ -29,6 +29,7 @@ export function ExpenseForm({
     amount: initial?.amount?.toString() ?? "",
     payment_method: initial?.payment_method ?? "",
     reference: initial?.reference ?? "",
+    event_name: initial?.event_name ?? "",
   });
   const [receiptFile, setReceiptFile] = useState<File | null>(null);
   const [receiptName, setReceiptName] = useState(initial?.receipt_name ?? "");
@@ -111,6 +112,7 @@ export function ExpenseForm({
       amount,
       payment_method: form.payment_method,
       reference: form.reference,
+      event_name: form.event_name,
       receipt_path: receiptPath,
       receipt_type: receiptType,
       receipt_name: receiptName_,
@@ -202,6 +204,9 @@ export function ExpenseForm({
         </div>
         <Field label="Reference (optional)" hint="Invoice number from supplier, etc.">
           <input className="input" value={form.reference} onChange={(e) => setForm({ ...form, reference: e.target.value })} />
+        </Field>
+        <Field label="Event (optional)" hint="Tag to an event for per-event profitability">
+          <input className="input" value={form.event_name} onChange={(e) => setForm({ ...form, event_name: e.target.value })} placeholder="e.g. Flint Hall Wedding" />
         </Field>
         <Field label="Receipt (optional)" hint="Image (JPG/PNG/HEIC) or PDF, max 10MB. Images get compressed automatically.">
           <input
