@@ -2,8 +2,9 @@ import Link from "next/link";
 import { TrendingDown, Banknote, Landmark, AlertCircle, Plus, Settings as SettingsIcon, ChevronRight } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { PageHeader, Card, EmptyState, StatusPill } from "@/components/ui";
+import { ExportAllButton } from "@/components/export-all-button";
 import { EXPENSE_CATEGORIES, expenseCategoryLabel } from "@/lib/types";
-import type { Expense, Invoice, Taking } from "@/lib/types";
+import type { DirectorLoan, Expense, Invoice, Taking } from "@/lib/types";
 import { fmtGBP, fmtDate, invoiceTotal } from "@/lib/utils";
 
 function StatCard({
@@ -34,15 +35,17 @@ function StatCard({
 
 export default async function DashboardPage() {
   const supabase = await createClient();
-  const [{ data: expenses }, { data: invoices }, { data: takings }] = await Promise.all([
+  const [{ data: expenses }, { data: invoices }, { data: takings }, { data: loans }] = await Promise.all([
     supabase.from("expenses").select("*").order("date", { ascending: false }),
     supabase.from("invoices").select("*").order("date", { ascending: false }),
     supabase.from("takings").select("*").order("date", { ascending: false }),
+    supabase.from("director_loans").select("*").order("date", { ascending: false }),
   ]);
 
   const exps = (expenses ?? []) as Expense[];
   const invs = (invoices ?? []) as Invoice[];
   const tks = (takings ?? []) as Taking[];
+  const dls = (loans ?? []) as DirectorLoan[];
 
   const now = new Date();
   const thisMonth = now.getMonth();
@@ -62,9 +65,12 @@ export default async function DashboardPage() {
     .reduce((s, i) => s + invoiceTotal(i), 0);
 
   const takingsTotal = tks.reduce((s, t) => s + Number(t.amount), 0);
+  const dlIn = dls.filter((l) => l.direction === "in").reduce((s, l) => s + Number(l.amount), 0);
+  const dlOut = dls.filter((l) => l.direction === "out").reduce((s, l) => s + Number(l.amount), 0);
   const income = takingsTotal + paid;
   const outgoings = totalAllExp;
-  const leftInBank = income - outgoings;
+  // Bank balance: cash flows include director's loan movements
+  const leftInBank = income + dlIn - outgoings - dlOut;
   const paidCount = invs.filter((i) => i.status === "paid").length;
 
   const byCategory: Record<string, number> = {};
@@ -81,6 +87,7 @@ export default async function DashboardPage() {
       <PageHeader
         title="Dashboard"
         subtitle={`${now.toLocaleDateString("en-GB", { month: "long", year: "numeric" })} overview`}
+        action={<ExportAllButton expenses={exps} takings={tks} invoices={invs} loans={dls} />}
       />
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
@@ -102,7 +109,7 @@ export default async function DashboardPage() {
           icon={<Landmark size={20} />}
           label="Left in the bank"
           value={fmtGBP(leftInBank)}
-          sub="Recorded income minus outgoings"
+          sub="Income + DL in − outgoings − DL out"
           accent={leftInBank < 0 ? "#C9410B" : "#173F87"}
         />
         <StatCard
