@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { PageHeader } from "@/components/ui";
-import { PeriodPicker, periodRange, periodLabel } from "@/components/period-picker";
+import { PeriodPicker } from "@/components/period-picker";
+import { periodRange, periodLabel } from "@/lib/period";
 import { computeTotals } from "@/lib/reports";
 import { EXPENSE_CATEGORIES, expenseCategoryLabel } from "@/lib/types";
 import type { Expense, Invoice, Taking, DirectorLoan } from "@/lib/types";
