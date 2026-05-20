@@ -1,17 +1,27 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Plus, Edit3, Trash2, Car, MapPin, PoundSterling } from "lucide-react";
+import { Plus, Edit3, Trash2, Car, MapPin, PoundSterling, BookMarked } from "lucide-react";
 import { PageHeader, EmptyState, Th, Td } from "./ui";
 import { MileageForm } from "./mileage-form";
+import { MileageRoutesModal } from "./mileage-routes-modal";
 import { useToast } from "./toast-provider";
 import { fmtGBP, fmtDate } from "@/lib/utils";
-import type { Mileage, Settings } from "@/lib/types";
+import type { Mileage, MileageRoute, Settings } from "@/lib/types";
 import { deleteMileage } from "@/app/(app)/mileage/actions";
 
-export function MileageView({ logs, settings }: { logs: Mileage[]; settings: Settings }) {
+export function MileageView({
+  logs,
+  settings,
+  routes,
+}: {
+  logs: Mileage[];
+  settings: Settings;
+  routes: MileageRoute[];
+}) {
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState<Mileage | null>(null);
+  const [showRoutes, setShowRoutes] = useState(false);
   const { showToast } = useToast();
 
   const totals = useMemo(() => {
@@ -45,9 +55,14 @@ export function MileageView({ logs, settings }: { logs: Mileage[]; settings: Set
         title="Mileage log"
         subtitle="HMRC mileage allowance — 45p/mile for the first 10,000 business miles, 25p thereafter."
         action={
-          <button className="btn-primary" onClick={() => { setEditing(null); setShowForm(true); }}>
-            <Plus size={16} /> Log a trip
-          </button>
+          <div className="flex gap-2">
+            <button className="btn-secondary" onClick={() => setShowRoutes(true)}>
+              <BookMarked size={16} /> Saved routes ({routes.length})
+            </button>
+            <button className="btn-primary" onClick={() => { setEditing(null); setShowForm(true); }}>
+              <Plus size={16} /> Log a trip
+            </button>
+          </div>
         }
       />
 
@@ -113,7 +128,15 @@ export function MileageView({ logs, settings }: { logs: Mileage[]; settings: Set
           initial={editing}
           defaultRate={Number(settings.mileage_rate_per_mile ?? 0.45)}
           knownEvents={knownEvents}
+          routes={routes}
           onClose={() => { setShowForm(false); setEditing(null); }}
+        />
+      )}
+
+      {showRoutes && (
+        <MileageRoutesModal
+          routes={routes}
+          onClose={() => setShowRoutes(false)}
         />
       )}
     </div>

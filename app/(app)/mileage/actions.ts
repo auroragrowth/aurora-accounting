@@ -54,3 +54,49 @@ export async function deleteMileage(id: string) {
   revalidatePath("/dashboard");
   return { success: true };
 }
+
+// ============ Saved routes ============
+
+export interface SaveRouteInput {
+  id?: string;
+  name?: string;
+  from_place: string;
+  to_place: string;
+  miles: number;
+  sort_order?: number;
+}
+
+export async function saveMileageRoute(input: SaveRouteInput) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: "Not authenticated" };
+  if (!input.from_place?.trim() || !input.to_place?.trim()) return { error: "From and to required" };
+  if (!input.miles || input.miles <= 0) return { error: "Miles must be > 0" };
+
+  const row = {
+    name: input.name?.trim() || null,
+    from_place: input.from_place.trim(),
+    to_place: input.to_place.trim(),
+    miles: input.miles,
+    sort_order: input.sort_order ?? 0,
+  };
+
+  if (input.id) {
+    const { error } = await supabase.from("mileage_routes").update(row).eq("id", input.id);
+    if (error) return { error: error.message };
+  } else {
+    const { error } = await supabase.from("mileage_routes").insert({ user_id: user.id, ...row });
+    if (error) return { error: error.message };
+  }
+
+  revalidatePath("/mileage");
+  return { success: true };
+}
+
+export async function deleteMileageRoute(id: string) {
+  const supabase = await createClient();
+  const { error } = await supabase.from("mileage_routes").delete().eq("id", id);
+  if (error) return { error: error.message };
+  revalidatePath("/mileage");
+  return { success: true };
+}
